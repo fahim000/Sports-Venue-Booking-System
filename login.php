@@ -2,6 +2,8 @@
 <html>
 <head>
     <title>Login</title>
+    
+
 </head>
 <body>
     <h1>Login</h1>
@@ -12,38 +14,32 @@
     // Initialize variables to hold user input
     $username = $password = "";
 
-    // Validation and login handling
+    // Validation and form submission handling
     if ($_SERVER["REQUEST_METHOD"] === "POST") {
-        // Retrieve form data without sanitizing (remember to use proper sanitization and validation in production)
+        // Retrieve and sanitize form data
         $username = $_POST["username"];
         $password = $_POST["password"];
-
-        // Validate input
-        $errors = [];
-
-        if (empty($username) || empty($password)) {
-            $errors[] = "Username and password are required.";
+    
+        // Query the database to fetch the user's password
+        $stmt = $connection->prepare("SELECT password FROM sport WHERE username = ?");
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $stmt->bind_result($storedPassword);
+    
+        if ($stmt->fetch() && $password === $storedPassword) {
+            // Passwords match, login successful
+            session_start();
+            $_SESSION["username"] = $username;
+            header("Location: homepage.php");
+            exit();
+        } else {
+            // Incorrect username or password, display an error message
+            $errors[] = "Incorrect username or password.";
         }
-
-        if (empty($errors)) {
-            // Prepare and execute the query to check if the user exists in the database
-            $stmt = $connection->prepare("SELECT username, password FROM users WHERE username = ?");
-            $stmt->bind_param("s", $username);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $user = $result->fetch_assoc();
-
-            if ($user && password_verify($password, $user["password"])) {
-                // Successful login, redirect to the homepage or any other appropriate page
-                header("Location: homepage.php");
-                exit();
-            } else {
-                $errors[] = "Invalid username or password. Please try again.";
-            }
-        }
-
+    
         $stmt->close();
     }
+    
     ?>
     <form method="post" action="<?php echo $_SERVER["PHP_SELF"]; ?>">
         <label for="username">Username:</label>
@@ -53,10 +49,20 @@
         <input type="password" name="password" id="password"><br>
 
         <input type="submit" value="Log In">
-
-        <p><?php echo implode("<br>", $errors); ?></p>
-
-        <p>Don't have an account? <a href="signup.php">Sign Up</a></p>
     </form>
+
+    <?php
+    // Display validation errors if there are any
+    if (!empty($errors)) {
+        echo "<p>Error(s) occurred during login:</p>";
+        echo "<ul>";
+        foreach ($errors as $error) {
+            echo "<li>$error</li>";
+        }
+        echo "</ul>";
+    }
+    ?>
+
+    <p>Don't have an account? <a href="signup.php">Sign up here</a></p>
 </body>
 </html>

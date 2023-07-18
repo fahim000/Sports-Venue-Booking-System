@@ -1,33 +1,51 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Sign Up</title>
+    <title>Edit Profile</title>
 </head>
 <body>
-    <h1>Sign Up</h1>
+    <h1>Edit Profile</h1>
     <?php
+    // Start the session (if not already started)
+    session_start();
+
+    // Check if the user is logged in. If not, redirect to the login page.
+    if (!isset($_SESSION["username"])) {
+        header("Location: login.php");
+        exit();
+    }
+
     // Include the database connection file
     require_once "db_connection.php";
 
-    // Initialize variables to hold user input
-    $username = $address = $phone = $email = $gender = $password = "";
+    // Retrieve the user's data from the database
+    $username = $_SESSION["username"]; // Assuming the username is stored in the session after successful login
+
+    // Fetch the current user data
+    $stmt = $connection->prepare("SELECT username, address, phone, email, gender FROM sport WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user_data = $result->fetch_assoc();
+    $stmt->close();
+
+    // Initialize variables to hold user input and set them to the current user data
+    $address = $phone = $email = $gender = "";
+    $address = $user_data["address"];
+    $phone = $user_data["phone"];
+    $email = $user_data["email"];
+    $gender = $user_data["gender"];
 
     // Validation and form submission handling
     if ($_SERVER["REQUEST_METHOD"] === "POST") {
         // Retrieve form data without sanitizing (remember to use proper sanitization and validation in production)
-        $username = $_POST["username"];
         $address = $_POST["address"];
         $phone = $_POST["phone"];
         $email = $_POST["email"];
         $gender = $_POST["gender"];
-        $password = $_POST["password"];
 
         // Validate input
         $errors = [];
-
-        if (empty($username)) {
-            $errors[] = "Username is required.";
-        }
 
         if (empty($address)) {
             $errors[] = "Address is required.";
@@ -49,20 +67,16 @@
             $errors[] = "Gender is required.";
         }
 
-        if (empty($password)) {
-            $errors[] = "Password is required.";
-        }
-
         if (empty($errors)) {
-            // Prepare and execute the query to insert the user into the database
-            $stmt = $connection->prepare("INSERT INTO sport (username, password, address, phone, email, gender) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("ssssss", $username, $password, $address, $phone, $email, $gender);
+            // Update the user's data in the database
+            $stmt = $connection->prepare("UPDATE sport SET address = ?, phone = ?, email = ?, gender = ? WHERE username = ?");
+            $stmt->bind_param("sssss", $address, $phone, $email, $gender, $username);
 
             if ($stmt->execute()) {
-                echo "Sign up successful!";
-                // Redirect to a login page or any other appropriate page
-                 header("Location: login.php");
-                 exit();
+                echo "Profile updated successfully!";
+                // You can redirect to the profile page or any other appropriate page after updating the profile.
+                // header("Location: profile.php");
+                // exit();
             } else {
                 echo "Error occurred. Please try again later.";
             }
@@ -93,10 +107,9 @@
         <input type="radio" name="gender" value="female" <?php if ($gender === "female") echo "checked"; ?>> Female
         <input type="radio" name="gender" value="other" <?php if ($gender === "other") echo "checked"; ?>> Other<br>
 
-        <label for="password">Password:</label>
-        <input type="password" name="password" id="password"><br>
-
-        <input type="submit" value="Sign Up">
+        <input type="submit" value="Save Changes">
     </form>
+
+    <p><a href="profile.php">Back to Profile</a></p>
 </body>
 </html>

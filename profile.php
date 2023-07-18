@@ -21,7 +21,7 @@
     // Retrieve the user's data from the database
     $username = $_SESSION["username"]; // Assuming the username is stored in the session after successful login
 
-    $stmt = $connection->prepare("SELECT username, address, phone, email, gender FROM users WHERE username = ?");
+    $stmt = $connection->prepare("SELECT username, address, phone, email, gender FROM sport WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
