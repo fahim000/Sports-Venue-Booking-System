@@ -20,8 +20,10 @@
     <p>
         <a href="profile.php"><button>Profile</button></a>
         <a href="logout.php"><button>Logout</button></a>
+        <a href="booking_form.php"><button>Book a venue</button></a>
     </p>
 
     <!-- The rest of the content remains the same -->
 </body>
 </html>
+ 
